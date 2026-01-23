@@ -4,9 +4,10 @@ import React from 'react';
 interface DashboardProps {
   onSair: () => void;
   onAbrirCalendario: () => void;
+  onAbrirGerador: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ onSair, onAbrirCalendario }) => {
+const Dashboard: React.FC<DashboardProps> = ({ onSair, onAbrirCalendario, onAbrirGerador }) => {
   return (
     <div className="w-full max-w-[800px] text-center">
       <div className="flex justify-between items-center mb-10 px-4">
@@ -22,7 +23,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onSair, onAbrirCalendario }) => {
         </div>
         <div 
           className="btn-dash bg-[#a30000]" 
-          onClick={() => alert("Funcionalidade em desenvolvimento")}
+          onClick={onAbrirGerador}
         >
           GERADOR DE PLANO DE AULA
         </div>

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Evento, LegendaItem } from '../types';
 import { apiService } from '../services/apiService';
 import { ITENS_LEGENDA, CORES_MAPA, MESES } from '../constants';
@@ -16,7 +16,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({ onVoltar }) => {
   const [anoAtual, setAnoAtual] = useState<number>(2026);
   const [eventos, setEventos] = useState<Evento[]>([]);
   
-  // Batch processing state
   const [showModal, setShowModal] = useState(false);
   const [loteConfig, setLoteConfig] = useState<LegendaItem | null>(null);
   const [loteInput, setLoteInput] = useState('');
@@ -36,15 +35,19 @@ const CalendarView: React.FC<CalendarViewProps> = ({ onVoltar }) => {
     const dados: { data: string; nome: string }[] = [];
     
     linhas.forEach(lin => {
-      const m = lin.match(/(\d{1,2})\/(\d{1,2})/);
+      // Regex que captura data dd/mm e o texto após qualquer separador comum
+      const m = lin.match(/(\d{1,2})\/(\d{1,2})(?:\s*[-–—:]\s*(.*))?/i);
       if (m) {
         let df = `${m[1].padStart(2, '0')}/${m[2].padStart(2, '0')}`;
-        let n = lin.includes('-') ? lin.split('-')[1].trim().toUpperCase() : loteConfig.l;
+        const textoExtra = (m[3] || '').trim().toUpperCase();
+        
+        // Se houver texto extra (ex: "Carnaval"), concatena com a categoria
+        let n = textoExtra ? `${loteConfig.l} - ${textoExtra}` : loteConfig.l;
         dados.push({ data: df, nome: n });
       }
     });
 
-    if (dados.length === 0) return alert("Nenhuma data válida encontrada");
+    if (dados.length === 0) return alert("Nenhuma data válida encontrada. Use o formato: 16/02 - Nome do Evento");
 
     const res = await apiService.salvarLoteDatas(dados, loteConfig.c);
     if (res.status === 'sucesso') {
@@ -74,25 +77,29 @@ const CalendarView: React.FC<CalendarViewProps> = ({ onVoltar }) => {
     const primeiroDiaSemana = new Date(ano, mesIdx, 1).getDay();
 
     const dias = [];
-    // Spacers for first week
     for (let x = 0; x < primeiroDiaSemana; x++) {
-      dias.push(<div key={`spacer-${x}`} className="w-full"></div>);
+      dias.push(<div key={`spacer-${mesIdxAbs}-${x}`} className="w-full"></div>);
     }
 
     for (let d = 1; d <= diasNoMes; d++) {
       const dataId = `${String(d).padStart(2, '0')}/${String(mesIdx + 1).padStart(2, '0')}`;
       const diaSemana = new Date(ano, mesIdx, d).getDay();
       
-      const evento = eventos.find(e => e.data === dataId);
+      const eventosDia = eventos.filter(e => e.data.trim() === dataId);
       
       let cls = "dia transition-all ";
       let style: React.CSSProperties = {};
-      let tooltip = "";
-
-      if (evento) {
-        style.backgroundColor = CORES_MAPA[evento.cor] || evento.cor;
-        style.color = "white";
-        tooltip = evento.legenda;
+      
+      if (eventosDia.length > 0) {
+        // Usa a cor do primeiro evento como fundo
+        const primeiroEvento = eventosDia[0];
+        const corHex = CORES_MAPA[primeiroEvento.cor] || (primeiroEvento.cor.startsWith('#') ? primeiroEvento.cor : null);
+        if (corHex) {
+          style.backgroundColor = corHex;
+          style.color = "white";
+        } else {
+          cls += `${primeiroEvento.cor} text-white `;
+        }
       } else {
         if (diaSemana === 0) cls += "dia-domingo ";
         else if (diaSemana === 6) cls += "dia-sabado ";
@@ -100,19 +107,29 @@ const CalendarView: React.FC<CalendarViewProps> = ({ onVoltar }) => {
 
       dias.push(
         <div 
-          key={dataId} 
+          key={`${mesIdxAbs}-${dataId}`} 
           className={cls} 
           style={style}
-          title={tooltip}
         >
           {d}
-          {tooltip && <div className="custom-tooltip">{tooltip}</div>}
+          {eventosDia.length > 0 && (
+            <div className="custom-tooltip">
+              {eventosDia.map((e, idx) => (
+                <div key={idx} className={idx > 0 ? "border-t border-white/20 mt-2 pt-2" : ""}>
+                  <div className="text-[10px] text-[#1abc9c] font-black uppercase mb-1">
+                    {eventosDia.length > 1 ? `Evento ${idx + 1}` : 'Informação'}
+                  </div>
+                  {e.legenda}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       );
     }
 
     return (
-      <div key={`mes-${mesIdxAbs}`} className="mes-container">
+      <div key={`mes-cont-${mesIdxAbs}`} className="mes-container">
         <h3 className="text-center font-bold mb-3 text-teal-400 text-sm tracking-widest">
           {MESES[mesIdx]} {ano}
         </h3>
@@ -127,7 +144,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({ onVoltar }) => {
   };
 
   const exportarPDF = async () => {
-    // Porting the logic from index.html to create a separate printable container
     const container = document.createElement('div');
     container.style.width = "210mm";
     container.style.padding = "10mm 5mm";
@@ -148,7 +164,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ onVoltar }) => {
           <div style="column-count:2; column-gap:12mm;">
               ${ITENS_LEGENDA.map(i => `
                   <div style="margin-bottom:1.5mm; break-inside:avoid;">
-                      <span style="display:inline-block; width:9mm; height:9mm; background:${CORES_MAPA[i.c]}; border-radius:50%; vertical-align:middle; margin-right:3mm;"></span>
+                      <span style="display:inline-block; width:9mm; height:9mm; background:${CORES_MAPA[i.c] || i.c}; border-radius:50%; vertical-align:middle; margin-right:3mm;"></span>
                       ${i.l}
                   </div>
               `).join('')}
@@ -179,9 +195,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({ onVoltar }) => {
           if (contadorCol % 7 === 0 && d !== 1) h += `</tr><tr>`;
           let df = `${String(d).padStart(2,'0')}/${String(idx+1).padStart(2,'0')}`;
           let ds = new Date(anoAtual, idx, d).getDay();
-          let e = eventosPorMes[idx].find(ev => ev.data === df);
-          let bg = e ? (CORES_MAPA[e.cor] || e.cor) : (ds===0) ? "#a3e635" : (ds===6) ? "#facc15" : "#ffffff";
-          let co = e ? "#ffffff" : (ds===0 || ds===6) ? "#000000" : "#000000";
+          let evs = eventosPorMes[idx].filter(ev => ev.data.trim() === df);
+          
+          let bg = evs.length > 0 ? (CORES_MAPA[evs[0].cor] || evs[0].cor) : (ds===0) ? "#a3e635" : (ds===6) ? "#facc15" : "#ffffff";
+          let co = evs.length > 0 ? "#ffffff" : (ds===0 || ds===6) ? "#000000" : "#000000";
+          
           h += `<td style="border:1px solid #000; padding:1mm; background:${bg}; color:${co}; font-weight:bold; height:6mm;">${d}</td>`;
           contadorCol++;
       }
@@ -226,8 +244,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ onVoltar }) => {
   };
 
   return (
-    <div className="w-full max-w-[1200px] flex flex-col items-start mt-4">
-      {/* Header controls */}
+    <div className="w-full max-w-[1200px] flex flex-col items-start mt-4 animate-fade-in">
       <div className="w-full flex flex-wrap justify-between items-center mb-6 gap-4 px-2">
         <h1 className="text-3xl font-bold">Calendário</h1>
         <div className="flex flex-wrap gap-3 items-center">
@@ -258,21 +275,19 @@ const CalendarView: React.FC<CalendarViewProps> = ({ onVoltar }) => {
             min="2000" max="2100" 
             className="input-field w-24 text-sm p-2"
           />
-          <button onClick={exportarPDF} className="bg-blue-600 hover:bg-blue-700 px-5 py-2 rounded-lg font-bold text-sm">
+          <button onClick={exportarPDF} className="bg-blue-600 hover:bg-blue-700 px-5 py-2 rounded-lg font-bold text-sm transition-colors">
             EXPORTAR PDF
           </button>
-          <button onClick={onVoltar} className="bg-gray-700 hover:bg-gray-800 px-5 py-2 rounded-lg font-bold text-sm">
+          <button onClick={onVoltar} className="bg-gray-700 hover:bg-gray-800 px-5 py-2 rounded-lg font-bold text-sm transition-colors">
             VOLTAR
           </button>
         </div>
       </div>
 
-      {/* Calendar Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
         {Array.from({ length: modoAtual }).map((_, i) => renderMonth(mesInicial + i))}
       </div>
 
-      {/* Legend Botoes */}
       <div className="mt-8 bg-black/30 p-6 rounded-2xl border border-white/10 w-full">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
           {ITENS_LEGENDA.map(item => (
@@ -287,30 +302,32 @@ const CalendarView: React.FC<CalendarViewProps> = ({ onVoltar }) => {
         </div>
       </div>
 
-      {/* Batch Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
           <div className="login-card w-full max-w-[450px] p-8">
             <h2 className="text-lg font-bold mb-4 text-[#1abc9c]">
               {loteConfig?.l}
             </h2>
+            <p className="text-[10px] text-gray-400 mb-4 uppercase tracking-tighter">
+              Formato: 16/02 - Nome do Evento (Opcional)
+            </p>
             <textarea 
               value={loteInput}
               onChange={(e) => setLoteInput(e.target.value)}
               rows={6} 
-              className="input-field text-sm font-mono w-full p-4" 
-              placeholder="Ex: 01/01 - Início das aulas"
+              className="input-field text-sm font-mono w-full p-4 custom-scrollbar" 
+              placeholder="Ex:&#10;16/02 - Carnaval&#10;18/02 - Quarta-feira de Cinzas"
             />
             <div className="flex gap-3 mt-4">
               <button 
                 onClick={handleSalvarLote} 
-                className="btn-entrar flex-1 p-2"
+                className="btn-entrar flex-1 p-2 shadow-lg active:scale-95 transition-transform"
               >
-                SALVAR
+                SALVAR NO CALENDÁRIO
               </button>
               <button 
                 onClick={fecharModal} 
-                className="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg text-white"
+                className="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg text-white transition-colors"
               >
                 CANCELAR
               </button>
