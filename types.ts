@@ -20,5 +20,6 @@ export interface LegendaItem {
 export enum AppScreen {
   LOGIN = 'LOGIN',
   DASHBOARD = 'DASHBOARD',
-  CALENDAR = 'CALENDAR'
+  CALENDAR = 'CALENDAR',
+  LESSON_PLAN_GENERATOR = 'LESSON_PLAN_GENERATOR'
 }

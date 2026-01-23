@@ -16,7 +16,7 @@ export const CORES_MAPA: Record<string, string> = {
 };
 
 export const ITENS_LEGENDA: LegendaItem[] = [
-  { l: 'FERIADO NACIONAL', c: 'bg-red-600' },
+  { l: 'FERIADO', c: 'bg-red-600' },
   { l: 'PONTO FACULTATIVO', c: 'bg-orange-500' },
   { l: 'ATIVIDADE AVALIATIVA - 1', c: 'bg-teal-600' },
   { l: 'ATIVIDADE AVALIATIVA 2', c: 'bg-purple-600' },

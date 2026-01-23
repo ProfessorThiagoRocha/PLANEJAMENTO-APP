@@ -4,6 +4,7 @@ import { AppScreen } from './types';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import CalendarView from './components/CalendarView';
+import LessonPlanGenerator from './components/LessonPlanGenerator';
 
 const App: React.FC = () => {
   const [screen, setScreen] = useState<AppScreen>(AppScreen.LOGIN);
@@ -22,11 +23,16 @@ const App: React.FC = () => {
         <Dashboard 
           onSair={() => navigateTo(AppScreen.LOGIN)}
           onAbrirCalendario={() => navigateTo(AppScreen.CALENDAR)}
+          onAbrirGerador={() => navigateTo(AppScreen.LESSON_PLAN_GENERATOR)}
         />
       )}
       
       {screen === AppScreen.CALENDAR && (
         <CalendarView onVoltar={() => navigateTo(AppScreen.DASHBOARD)} />
+      )}
+
+      {screen === AppScreen.LESSON_PLAN_GENERATOR && (
+        <LessonPlanGenerator onVoltar={() => navigateTo(AppScreen.DASHBOARD)} />
       )}
     </div>
   );
