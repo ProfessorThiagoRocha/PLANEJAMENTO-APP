@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai"; // Importação corrigida para o SDK oficial
 import { apiService } from '../services/apiService';
 import { Evento } from '../types';
 
@@ -67,7 +66,7 @@ const LessonPlanGenerator: React.FC<LessonPlanGeneratorProps> = ({ onVoltar }) =
   };
 
   const gerarPlano = async () => {
-    const temDiaSelecionado = Object.values(gradeAulas).some(qtd => qtd > 0);
+    const temDiaSelecionado = Object.values(gradeAulas).some(qtd => (qtd as number) > 0);
     
     if (!professor || !disciplina || !dataInicio || !dataFim || !conteudos || !temDiaSelecionado) {
       alert("Atenção: Preencha Professor, Disciplina, Datas, Conteúdos e defina as aulas da semana.");
@@ -78,10 +77,14 @@ const LessonPlanGenerator: React.FC<LessonPlanGeneratorProps> = ({ onVoltar }) =
     setPlanoGerado('');
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      // CORREÇÃO 1: Usando NEXT_PUBLIC para funcionar na Vercel
+      const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || '');
       
+      // CORREÇÃO 2: Usando o modelo correto (Gemini 1.5 Flash é o ideal para planos rápidos)
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
       const resumoGrade = Object.entries(gradeAulas)
-        .filter(([_, qtd]) => qtd > 0)
+        .filter(([_, qtd]) => (qtd as number) > 0)
         .map(([dia, qtd]) => {
           const dLabel = diasOpcoes.find(o => o.id === dia)?.label;
           return `${dLabel} (${qtd} aulas)`;
@@ -112,7 +115,7 @@ const LessonPlanGenerator: React.FC<LessonPlanGeneratorProps> = ({ onVoltar }) =
         Eventos Calendário: ${eventosNoPeriodo || 'Nenhum.'}
 
         REGRAS IMPORTANTES:
-        1. "INÍCIO DO MÓDULO" NÃO É FERIADO. É dia letivo normal. Deve conter a "Aula 1: Acolhida, Apresentação da Disciplina e [Primeiro Conteúdo]".
+        1. "INÍCIO DO MÓDULO" NÃO É FERIADO. É dia letivo normal.
         2. Liste TODAS as datas que têm aula conforme a Grade Semanal.
         3. Formato:
            DATA (em negrito)
@@ -123,14 +126,13 @@ const LessonPlanGenerator: React.FC<LessonPlanGeneratorProps> = ({ onVoltar }) =
         Gere o plano agora.
       `;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
-        contents: prompt,
-      });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      setPlanoGerado(response.text());
 
-      setPlanoGerado(response.text || '');
     } catch (error) {
-      alert("Erro ao gerar. Verifique sua conexão.");
+      console.error(error);
+      alert("Erro ao gerar. Certifique-se de que a API KEY está configurada na Vercel.");
     } finally {
       setLoading(false);
     }
