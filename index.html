@@ -1,144 +1,1534 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Planejamento App</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduPlan AI - Planejamento Escolar Inteligente</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <style>
-      body {
-        background: #001a24;
-        color: white;
-        font-family: sans-serif;
-        min-height: 100vh;
-        margin: 0;
-      }
-      /* Custom styles matching the original design */
-      .login-card {
-        background: #002e3b;
-        border-radius: 20px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-      }
-      .input-field {
-        background: #0b4554;
-        border: 1px solid #165b6d;
-        border-radius: 10px;
-        color: white;
-        outline: none;
-      }
-      .btn-entrar {
-        background: #1abc9c;
-        color: #001a24;
-        font-weight: bold;
-        border-radius: 10px;
-      }
-      .btn-dash {
-        border-radius: 15px;
-        height: 150px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        font-weight: bold;
-        cursor: pointer;
-        border: 1px solid rgba(255,255,255,0.1);
-        transition: transform 0.2s;
-      }
-      .btn-dash:hover {
-        transform: scale(1.02);
-      }
-      .mes-container {
-        background: rgba(255,255,255,0.05);
-        border-radius: 15px;
-        padding: 15px;
-        border: 1px solid rgba(255,255,255,0.1);
-      }
-      .dia {
-        aspect-ratio: 1/1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 11px;
-        border-radius: 6px;
-        font-weight: bold;
-        background: rgba(255,255,255,0.03);
-        cursor: pointer;
-        position: relative;
-      }
-      .legenda-item {
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 11px;
-        font-weight: bold;
-        background: rgba(255,255,255,0.08);
-        padding: 10px;
-        border-radius: 10px;
-      }
-      .dia-sabado { background-color: #facc15 !important; color: black !important; }
-      .dia-domingo { background-color: #a3e635 !important; color: black !important; }
-      
-      .modo-btn { padding: 8px 16px; border-radius: 8px; background: #334155; cursor: pointer; transition: all 0.2s; }
-      .modo-btn.active { background: #1abc9c; color: #001a24; font-weight: bold; }
-      .modo-btn:hover { background: #4b5e77; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-      .custom-tooltip {
-          position: absolute;
-          background: #001a24;
-          color: white;
-          padding: 8px 12px;
-          border-radius: 8px;
-          font-size: 11px;
-          white-space: pre-wrap;
-          z-index: 100;
-          box-shadow: 0 10px 25px rgba(0,0,0,0.8);
-          border: 1px solid #1abc9c;
-          pointer-events: none;
-          opacity: 0;
-          transition: opacity 0.2s, transform 0.2s;
-          bottom: 120%;
-          left: 50%;
-          transform: translateX(-50%) translateY(5px);
-          min-width: 160px;
-          max-width: 280px;
-          text-align: center;
-          line-height: 1.5;
-      }
-      .dia:hover .custom-tooltip {
-          opacity: 1;
-          transform: translateX(-50%) translateY(0);
-      }
-      .btn-sair { background: #a30000; padding: 10px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 14px; }
+        :root {
+            --bg: #0a0f1c;
+            --surface: #151b2d;
+            --surface-light: #1e2642;
+            --primary: #6366f1;
+            --text: #f1f5f9;
+            --text-muted: #64748b;
+            --holiday: #dc2626;
+            --optional: #ea580c;
+            --school: #84cc16;
+            --exam: #8b5cf6;
+            --weekend: #1e293b;
+        }
 
-      /* Custom Scrollbar */
-      .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-      .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
-      .custom-scrollbar::-webkit-scrollbar-thumb { background: #1abc9c; border-radius: 10px; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
 
-      @keyframes fade-in {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-      .animate-fade-in { animation: fade-in 0.4s ease-out forwards; }
+        /* Navigation */
+        nav {
+            background: var(--surface);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 0.5rem;
+            background: var(--bg);
+            padding: 0.25rem;
+            border-radius: 0.5rem;
+        }
+
+        .nav-tab {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 0.375rem;
+            transition: all 0.3s;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .nav-tab:hover {
+            color: var(--text);
+        }
+
+        .nav-tab.active {
+            color: var(--text);
+            background: var(--surface-light);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* Calendar Header */
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .calendar-title {
+            font-size: 2rem;
+            font-weight: 600;
+        }
+
+        .calendar-subtitle {
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .calendar-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--surface-light);
+            color: var(--text);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-danger {
+            background: rgba(220, 38, 38, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(220, 38, 38, 0.3);
+        }
+
+        .btn-danger:hover {
+            background: rgba(220, 38, 38, 0.3);
+        }
+
+        /* Calendar Grid */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1200px) {
+            .calendar-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .calendar-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .month-card {
+            background: var(--surface);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .month-header {
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2dd4bf;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .weekday {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            padding: 0.5rem;
+            font-weight: 500;
+        }
+
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.25rem;
+        }
+
+        .day-cell {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.375rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            background: var(--school);
+            color: rgba(0, 0, 0, 0.7);
+        }
+
+        .day-cell:hover {
+            transform: scale(1.1);
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .day-cell.empty {
+            background: transparent;
+            cursor: default;
+        }
+
+        .day-cell.empty:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        .day-cell.weekend {
+            background: var(--weekend);
+            color: var(--text-muted);
+        }
+
+        .day-cell.holiday {
+            background: var(--holiday);
+            color: white;
+        }
+
+        .day-cell.optional {
+            background: var(--optional);
+            color: white;
+        }
+
+        .day-cell.exam {
+            background: var(--exam);
+            color: white;
+        }
+
+        .day-cell.event {
+            background: #ec4899;
+            color: white;
+        }
+
+        .day-cell.activity {
+            background: #06b6d4;
+            color: white;
+        }
+
+        .day-cell.has-event::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+            padding: 1rem;
+            background: var(--surface);
+            border-radius: 0.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--surface);
+            padding: 2rem;
+            border-radius: 1rem;
+            width: 90%;
+            max-width: 500px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            justify-content: flex-end;
+        }
+
+        /* Bulk Import Specific */
+        .bulk-textarea {
+            min-height: 300px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        .preview-list {
+            max-height: 200px;
+            overflow-y: auto;
+            background: var(--bg);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .preview-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.9rem;
+        }
+
+        .preview-date {
+            background: var(--primary);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-weight: 600;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        /* Planning Page */
+        .planning-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .planning-section {
+            background: var(--surface);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            margin-bottom: 1.5rem;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .weekday-selector {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .weekday-option {
+            padding: 1rem;
+            background: var(--bg);
+            border: 2px solid transparent;
+            border-radius: 0.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .weekday-option:hover {
+            border-color: var(--primary);
+        }
+
+        .weekday-option.selected {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .weekday-option .day-name {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+        }
+
+        .weekday-option.selected .day-name {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .weekday-option .day-letter {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .quantity-selector {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .quantity-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 0.5rem;
+            border: none;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 1.25rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .quantity-btn:hover {
+            background: var(--primary);
+        }
+
+        .quantity-display {
+            font-size: 1.5rem;
+            font-weight: 600;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .content-import-area {
+            background: var(--bg);
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 0.75rem;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s;
+        }
+
+        .content-import-area:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .content-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .content-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg);
+            border-radius: 0.5rem;
+            border-left: 4px solid var(--primary);
+        }
+
+        .content-number {
+            background: var(--primary);
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .content-text {
+            flex: 1;
+        }
+
+        .content-delete {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        .content-delete:hover {
+            color: #ef4444;
+        }
+
+        /* Generated Plan */
+        .generated-plan {
+            margin-top: 2rem;
+        }
+
+        .plan-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 1rem;
+            padding: 1.5rem;
+            background: var(--surface);
+            border-radius: 0.75rem;
+            border-left: 4px solid var(--primary);
+        }
+
+        .timeline-date {
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .timeline-day {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .timeline-month {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .timeline-content {
+            flex: 1;
+        }
+
+        .timeline-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .timeline-desc {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            border-left: 4px solid var(--primary);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transform: translateX(400px);
+            transition: transform 0.3s;
+            z-index: 2000;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.error {
+            border-left-color: #ef4444;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 1rem;
+        }
+
+        .tab {
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .tab:hover {
+            color: var(--text);
+        }
+
+        .tab.active {
+            color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "@google/genai": "https://esm.sh/@google/genai",
-    "@google/generative-ai": "https://esm.sh/@google/generative-ai@^0.24.1"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
 </head>
-  <body>
-    <div id="root"></div>
-  <script type="module" src="/index.tsx"></script>
+<body>
+    <nav>
+        <div class="nav-container">
+            <div class="logo">
+                <span>🎓</span>
+                <span>EduPlan AI</span>
+            </div>
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="showPage('calendar')">Calendário</button>
+                <button class="nav-tab" onclick="showPage('planning')">Planejamento</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Calendar Page -->
+        <div id="calendar-page" class="page active">
+            <div class="calendar-header">
+                <div>
+                    <h1 class="calendar-title">Calendário Escolar</h1>
+                    <p class="calendar-subtitle">Clique em uma data para adicionar ou editar eventos</p>
+                </div>
+                <div class="calendar-actions">
+                    <button class="btn btn-primary" onclick="openBulkImport()">
+                        <span>📥</span> Importar Lote
+                    </button>
+                    <button class="btn btn-danger" onclick="clearAllEvents()">
+                        <span>🗑️</span> Limpar
+                    </button>
+                </div>
+            </div>
+
+            <div id="calendar-grid" class="calendar-grid">
+                <!-- Months generated by JS -->
+            </div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: var(--school);"></div>
+                    <span>Dia Letivo</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: var(--holiday);"></div>
+                    <span>Feriado</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: var(--optional);"></div>
+                    <span>Ponto Facultativo</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: var(--exam);"></div>
+                    <span>Prova/Avaliação</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ec4899;"></div>
+                    <span>Evento</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: var(--weekend);"></div>
+                    <span>Fim de Semana</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Planning Page -->
+        <div id="planning-page" class="page">
+            <div class="planning-container">
+                <!-- Class Configuration -->
+                <div class="planning-section">
+                    <h3 class="section-title">⚙️ Configuração das Aulas</h3>
+                    
+                    <div class="form-group">
+                        <label>Selecione os dias de aula na semana:</label>
+                        <div class="weekday-selector">
+                            <div class="weekday-option" onclick="toggleWeekday(0)" id="wd-0">
+                                <div class="day-name">Dom</div>
+                                <div class="day-letter">D</div>
+                            </div>
+                            <div class="weekday-option" onclick="toggleWeekday(1)" id="wd-1">
+                                <div class="day-name">Seg</div>
+                                <div class="day-letter">S</div>
+                            </div>
+                            <div class="weekday-option selected" onclick="toggleWeekday(2)" id="wd-2">
+                                <div class="day-name">Ter</div>
+                                <div class="day-letter">T</div>
+                            </div>
+                            <div class="weekday-option selected" onclick="toggleWeekday(3)" id="wd-3">
+                                <div class="day-name">Qua</div>
+                                <div class="day-letter">Q</div>
+                            </div>
+                            <div class="weekday-option selected" onclick="toggleWeekday(4)" id="wd-4">
+                                <div class="day-name">Qui</div>
+                                <div class="day-letter">Q</div>
+                            </div>
+                            <div class="weekday-option" onclick="toggleWeekday(5)" id="wd-5">
+                                <div class="day-name">Sex</div>
+                                <div class="day-letter">S</div>
+                            </div>
+                            <div class="weekday-option" onclick="toggleWeekday(6)" id="wd-6">
+                                <div class="day-name">Sáb</div>
+                                <div class="day-letter">S</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Aulas por dia:</label>
+                        <div class="quantity-selector">
+                            <button class="quantity-btn" onclick="changeQuantity(-1)">−</button>
+                            <div class="quantity-display" id="classes-per-day">2</div>
+                            <button class="quantity-btn" onclick="changeQuantity(1)">+</button>
+                            <span style="color: var(--text-muted); margin-left: 1rem;">aulas/dia</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Período do planejamento:</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <input type="date" id="plan-start" onchange="updatePlanPreview()">
+                            <input type="date" id="plan-end" onchange="updatePlanPreview()">
+                        </div>
+                    </div>
+
+                    <div id="plan-preview" style="margin-top: 1rem; padding: 1rem; background: var(--bg); border-radius: 0.5rem; display: none;">
+                        <div style="color: var(--text-muted); font-size: 0.9rem;">
+                            Total de aulas previstas: <strong id="total-classes-preview" style="color: var(--primary); font-size: 1.25rem;">0</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Import -->
+                <div class="planning-section">
+                    <h3 class="section-title">📚 Conteúdos Programáticos</h3>
+                    
+                    <button class="btn btn-secondary" onclick="openContentImport()" style="width: 100%; margin-bottom: 1rem;">
+                        <span>📥</span> Importar Conteúdos em Lote
+                    </button>
+
+                    <div id="contents-list" class="content-list">
+                        <div style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                            Nenhum conteúdo adicionado. Importe ou adicione manualmente.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Generate Button -->
+                <button class="btn btn-primary" style="width: 100%; padding: 1.25rem; font-size: 1.1rem;" onclick="generatePlan()">
+                    <span>✨</span> Gerar Planejamento com IA
+                </button>
+
+                <div id="generated-plan" class="generated-plan"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Event Modal -->
+    <div class="modal" id="event-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Adicionar Evento</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem;" id="selected-date-display"></p>
+            </div>
+            <div class="form-group">
+                <label>Tipo</label>
+                <select id="event-type">
+                    <option value="school">Dia Letivo Normal</option>
+                    <option value="holiday">Feriado</option>
+                    <option value="optional">Ponto Facultativo</option>
+                    <option value="exam">Prova/Avaliação</option>
+                    <option value="event">Evento Escolar</option>
+                    <option value="activity">Atividade Especial</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Título</label>
+                <input type="text" id="event-title" placeholder="Ex: Carnaval, Prova Bimestral...">
+            </div>
+            <div class="form-group">
+                <label>Descrição (opcional)</label>
+                <input type="text" id="event-desc" placeholder="Detalhes adicionais...">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+                <button class="btn btn-danger" onclick="deleteEventByDate()" id="btn-delete-event" style="display: none;">Remover</button>
+                <button class="btn btn-primary" onclick="saveEvent()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Import Modal -->
+    <div class="modal" id="bulk-import-modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>📥 Importar Eventos em Lote</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">
+                    Formato: <code>DD/MM – Descrição</code> (um por linha)
+                </p>
+            </div>
+            <textarea id="bulk-input" class="bulk-textarea" placeholder="Exemplo:
+PONTO FACULTATIVO
+16/02 – Carnaval
+18/02 – Quarta-feira de Cinzas
+
+FERIADOS
+01/01 – Confraternização Universal
+17/02 – Carnaval
+21/04 – Tiradentes"></textarea>
+            
+            <div id="bulk-preview" class="preview-list" style="display: none;"></div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeBulkImport()">Cancelar</button>
+                <button class="btn btn-primary" onclick="previewBulk()">Pré-visualizar</button>
+                <button class="btn btn-primary" onclick="confirmBulkImport()" id="btn-confirm-bulk" style="display: none;">
+                    Confirmar Importação
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Import Modal -->
+    <div class="modal" id="content-import-modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>📥 Importar Conteúdos</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">
+                    Cole a lista de conteúdos (um por linha)
+                </p>
+            </div>
+            <textarea id="content-input" class="bulk-textarea" placeholder="Exemplo:
+Introdução à Revolução Industrial
+Contexto histórico do século XVIII
+Invenções e tecnologias
+Impacto social e econômico
+Consequências para o mundo moderno"></textarea>
+            
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeContentImport()">Cancelar</button>
+                <button class="btn btn-primary" onclick="importContents()">Importar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Data
+        let events = JSON.parse(localStorage.getItem('schoolEvents')) || [];
+        let contents = JSON.parse(localStorage.getItem('planContents')) || [];
+        let selectedDate = null;
+        let selectedWeekdays = [2, 3, 4]; // Ter, Qua, Qui default
+        let classesPerDay = 2;
+        let bulkPreviewData = [];
+
+        const months = [
+            'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ];
+
+        const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCalendar();
+            initializePlanning();
+            updateContentsList();
+        });
+
+        function initializePlanning() {
+            // Set default dates
+            const today = new Date();
+            const start = new Date(today.getFullYear(), 1, 1); // Feb 1
+            const end = new Date(today.getFullYear(), 3, 30);  // Apr 30
+            
+            document.getElementById('plan-start').value = start.toISOString().split('T')[0];
+            document.getElementById('plan-end').value = end.toISOString().split('T')[0];
+            
+            updatePlanPreview();
+        }
+
+        // Navigation
+        function showPage(page) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            
+            document.getElementById(page + '-page').classList.add('active');
+            event.target.classList.add('active');
+            
+            if (page === 'calendar') renderCalendar();
+        }
+
+        // Calendar Rendering
+        function renderCalendar() {
+            const grid = document.getElementById('calendar-grid');
+            grid.innerHTML = '';
+            
+            const year = new Date().getFullYear();
+            
+            for (let month = 0; month < 12; month++) {
+                const monthCard = createMonthCard(year, month);
+                grid.appendChild(monthCard);
+            }
+        }
+
+        function createMonthCard(year, month) {
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startingDay = firstDay.getDay();
+            
+            const card = document.createElement('div');
+            card.className = 'month-card';
+            
+            let daysHTML = '';
+            
+            // Empty cells for days before month starts
+            for (let i = 0; i < startingDay; i++) {
+                daysHTML += '<div class="day-cell empty"></div>';
+            }
+            
+            // Days
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const dayOfWeek = new Date(year, month, day).getDay();
+                const event = events.find(e => e.date === dateStr);
+                
+                let cellClass = 'day-cell';
+                let title = '';
+                
+                if (dayOfWeek === 0 || dayOfWeek === 6) {
+                    cellClass += ' weekend';
+                }
+                
+                if (event) {
+                    cellClass += ` ${event.type} has-event`;
+                    title = event.title;
+                } else if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                    cellClass += ' school';
+                }
+                
+                daysHTML += `<div class="${cellClass}" onclick="openEventModal('${dateStr}')" title="${title}">${day}</div>`;
+            }
+            
+            card.innerHTML = `
+                <div class="month-header">${months[month]} ${year}</div>
+                <div class="weekdays">
+                    ${weekdays.map(d => `<div class="weekday">${d}</div>`).join('')}
+                </div>
+                <div class="days-grid">
+                    ${daysHTML}
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Event Modal
+        function openEventModal(dateStr) {
+            selectedDate = dateStr;
+            const date = new Date(dateStr);
+            const event = events.find(e => e.date === dateStr);
+            
+            document.getElementById('selected-date-display').textContent = 
+                date.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            
+            if (event) {
+                document.getElementById('event-type').value = event.type;
+                document.getElementById('event-title').value = event.title;
+                document.getElementById('event-desc').value = event.description || '';
+                document.getElementById('btn-delete-event').style.display = 'inline-block';
+            } else {
+                document.getElementById('event-type').value = 'school';
+                document.getElementById('event-title').value = '';
+                document.getElementById('event-desc').value = '';
+                document.getElementById('btn-delete-event').style.display = 'none';
+            }
+            
+            document.getElementById('event-modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('event-modal').classList.remove('active');
+        }
+
+        function saveEvent() {
+            const type = document.getElementById('event-type').value;
+            const title = document.getElementById('event-title').value;
+            const description = document.getElementById('event-desc').value;
+            
+            if (!title && type === 'school') {
+                // Remove event if saving as school day without title
+                events = events.filter(e => e.date !== selectedDate);
+            } else {
+                const existingIndex = events.findIndex(e => e.date === selectedDate);
+                const eventData = {
+                    date: selectedDate,
+                    type,
+                    title: title || 'Dia Letivo',
+                    description
+                };
+                
+                if (existingIndex >= 0) {
+                    events[existingIndex] = eventData;
+                } else {
+                    events.push(eventData);
+                }
+            }
+            
+            saveEvents();
+            renderCalendar();
+            closeModal();
+            showToast('Evento salvo!');
+        }
+
+        function deleteEventByDate() {
+            events = events.filter(e => e.date !== selectedDate);
+            saveEvents();
+            renderCalendar();
+            closeModal();
+            showToast('Evento removido');
+        }
+
+        // Bulk Import
+        function openBulkImport() {
+            document.getElementById('bulk-import-modal').classList.add('active');
+            document.getElementById('bulk-input').value = '';
+            document.getElementById('bulk-preview').style.display = 'none';
+            document.getElementById('btn-confirm-bulk').style.display = 'none';
+        }
+
+        function closeBulkImport() {
+            document.getElementById('bulk-import-modal').classList.remove('active');
+        }
+
+        function previewBulk() {
+            const input = document.getElementById('bulk-input').value;
+            const year = new Date().getFullYear();
+            
+            if (!input.trim()) {
+                showToast('Cole os eventos primeiro', 'error');
+                return;
+            }
+            
+            bulkPreviewData = parseBulkEvents(input, year);
+            
+            if (bulkPreviewData.length === 0) {
+                showToast('Nenhum evento encontrado', 'error');
+                return;
+            }
+            
+            const preview = document.getElementById('bulk-preview');
+            preview.innerHTML = bulkPreviewData.map(e => `
+                <div class="preview-item">
+                    <span class="preview-date">${e.date.split('-').reverse().join('/')}</span>
+                    <span style="text-transform: uppercase; font-size: 0.75rem; color: var(--text-muted);">${e.type}</span>
+                    <span style="flex: 1;">${e.title}</span>
+                </div>
+            `).join('');
+            
+            preview.style.display = 'block';
+            document.getElementById('btn-confirm-bulk').style.display = 'inline-block';
+        }
+
+        function parseBulkEvents(input, year) {
+            const lines = input.split('\n');
+            const result = [];
+            let currentType = 'holiday';
+            
+            const typeMap = {
+                'FERIADO': 'holiday',
+                'FERIADOS': 'holiday',
+                'FACULTATIVO': 'optional',
+                'PONTO FACULTATIVO': 'optional',
+                'PROVA': 'exam',
+                'AVALIAÇÃO': 'exam',
+                'EVENTO': 'event',
+                'ATIVIDADE': 'activity'
+            };
+            
+            lines.forEach(line => {
+                line = line.trim();
+                if (!line) return;
+                
+                // Check for section header
+                const upper = line.toUpperCase();
+                for (const [key, value] of Object.entries(typeMap)) {
+                    if (upper.includes(key) && !line.includes('/')) {
+                        currentType = value;
+                        return;
+                    }
+                }
+                
+                // Parse date line
+                const match = line.match(/(\d{2})\/(\d{2})\s*[–-]\s*(.+)/);
+                if (match) {
+                    const [, day, month, title] = match;
+                    
+                    // Detect type from title
+                    let type = currentType;
+                    const lowerTitle = title.toLowerCase();
+                    if (lowerTitle.includes('carnaval') || lowerTitle.includes('feriado')) type = 'holiday';
+                    else if (lowerTitle.includes('prova') || lowerTitle.includes('avaliação')) type = 'exam';
+                    else if (lowerTitle.includes('facultativo') || lowerTitle.includes('vespera')) type = 'optional';
+                    
+                    result.push({
+                        date: `${year}-${month}-${day}`,
+                        type,
+                        title: title.trim(),
+                        description: ''
+                    });
+                }
+            });
+            
+            return result;
+        }
+
+        function confirmBulkImport() {
+            bulkPreviewData.forEach(event => {
+                const existing = events.findIndex(e => e.date === event.date);
+                if (existing >= 0) {
+                    events[existing] = { ...event, id: events[existing].id };
+                } else {
+                    events.push({ ...event, id: Date.now().toString() + Math.random() });
+                }
+            });
+            
+            saveEvents();
+            renderCalendar();
+            closeBulkImport();
+            showToast(`${bulkPreviewData.length} eventos importados!`);
+        }
+
+        // Planning Functions
+        function toggleWeekday(day) {
+            const index = selectedWeekdays.indexOf(day);
+            const element = document.getElementById(`wd-${day}`);
+            
+            if (index > -1) {
+                if (selectedWeekdays.length > 1) {
+                    selectedWeekdays.splice(index, 1);
+                    element.classList.remove('selected');
+                }
+            } else {
+                selectedWeekdays.push(day);
+                selectedWeekdays.sort();
+                element.classList.add('selected');
+            }
+            
+            updatePlanPreview();
+        }
+
+        function changeQuantity(delta) {
+            classesPerDay = Math.max(1, Math.min(10, classesPerDay + delta));
+            document.getElementById('classes-per-day').textContent = classesPerDay;
+            updatePlanPreview();
+        }
+
+        function updatePlanPreview() {
+            const start = new Date(document.getElementById('plan-start').value);
+            const end = new Date(document.getElementById('plan-end').value);
+            
+            if (isNaN(start) || isNaN(end)) return;
+            
+            let count = 0;
+            const current = new Date(start);
+            
+            while (current <= end) {
+                const dayOfWeek = current.getDay();
+                const dateStr = current.toISOString().split('T')[0];
+                const event = events.find(e => e.date === dateStr);
+                
+                if (selectedWeekdays.includes(dayOfWeek)) {
+                    if (!event || (event.type !== 'holiday' && event.type !== 'optional')) {
+                        count += classesPerDay;
+                    }
+                }
+                
+                current.setDate(current.getDate() + 1);
+            }
+            
+            document.getElementById('total-classes-preview').textContent = count;
+            document.getElementById('plan-preview').style.display = 'block';
+        }
+
+        // Content Management
+        function openContentImport() {
+            document.getElementById('content-import-modal').classList.add('active');
+            document.getElementById('content-input').value = '';
+        }
+
+        function closeContentImport() {
+            document.getElementById('content-import-modal').classList.remove('active');
+        }
+
+        function importContents() {
+            const input = document.getElementById('content-input').value;
+            if (!input.trim()) {
+                showToast('Cole os conteúdos primeiro', 'error');
+                return;
+            }
+            
+            const lines = input.split('\n').filter(l => l.trim());
+            lines.forEach(line => {
+                contents.push({
+                    id: Date.now().toString() + Math.random(),
+                    text: line.trim()
+                });
+            });
+            
+            saveContents();
+            updateContentsList();
+            closeContentImport();
+            showToast(`${lines.length} conteúdos importados!`);
+        }
+
+        function updateContentsList() {
+            const container = document.getElementById('contents-list');
+            
+            if (contents.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                        Nenhum conteúdo adicionado. Importe ou adicione manualmente.
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = contents.map((c, i) => `
+                <div class="content-item">
+                    <div class="content-number">${i + 1}</div>
+                    <div class="content-text">${c.text}</div>
+                    <button class="content-delete" onclick="deleteContent('${c.id}')">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function deleteContent(id) {
+            contents = contents.filter(c => c.id !== id);
+            saveContents();
+            updateContentsList();
+        }
+
+        function saveContents() {
+            localStorage.setItem('planContents', JSON.stringify(contents));
+        }
+
+        // Plan Generation
+        function generatePlan() {
+            if (contents.length === 0) {
+                showToast('Adicione conteúdos primeiro', 'error');
+                return;
+            }
+            
+            const start = new Date(document.getElementById('plan-start').value);
+            const end = new Date(document.getElementById('plan-end').value);
+            
+            if (isNaN(start) || isNaN(end)) {
+                showToast('Selecione as datas do período', 'error');
+                return;
+            }
+            
+            // Calculate available slots
+            const slots = [];
+            const current = new Date(start);
+            
+            while (current <= end) {
+                const dayOfWeek = current.getDay();
+                const dateStr = current.toISOString().split('T')[0];
+                const event = events.find(e => e.date === dateStr);
+                
+                if (selectedWeekdays.includes(dayOfWeek)) {
+                    if (!event || (event.type !== 'holiday' && event.type !== 'optional')) {
+                        for (let i = 0; i < classesPerDay; i++) {
+                            slots.push(new Date(current));
+                        }
+                    }
+                }
+                
+                current.setDate(current.getDate() + 1);
+            }
+            
+            if (slots.length === 0) {
+                showToast('Não há dias letivos no período selecionado', 'error');
+                return;
+            }
+            
+            if (slots.length < contents.length) {
+                showToast(`Atenção: Há mais conteúdos (${contents.length}) que aulas disponíveis (${slots.length})`, 'error');
+                return;
+            }
+            
+            // Distribute contents
+            const classesPerContent = Math.floor(slots.length / contents.length);
+            const plan = [];
+            let slotIndex = 0;
+            
+            contents.forEach((content, idx) => {
+                const isLast = idx === contents.length - 1;
+                const numClasses = isLast ? (slots.length - slotIndex) : classesPerContent;
+                
+                for (let i = 0; i < numClasses && slotIndex < slots.length; i++) {
+                    const date = slots[slotIndex];
+                    const dateEvent = events.find(e => e.date === date.toISOString().split('T')[0]);
+                    
+                    plan.push({
+                        date: date,
+                        content: content.text,
+                        contentIndex: idx + 1,
+                        classNumber: slotIndex + 1,
+                        event: dateEvent
+                    });
+                    
+                    slotIndex++;
+                }
+            });
+            
+            displayGeneratedPlan(plan);
+        }
+
+        function displayGeneratedPlan(plan) {
+            const container = document.getElementById('generated-plan');
+            
+            let html = `
+                <div class="planning-section" style="margin-top: 2rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h3 class="section-title">📋 Plano de Aulas Gerado</h3>
+                        <button class="btn btn-primary" onclick="downloadPlanPDF()">
+                            <span>📄</span> Baixar PDF
+                        </button>
+                    </div>
+                    <div class="plan-timeline">
+            `;
+            
+            plan.forEach((item, idx) => {
+                const monthName = months[item.date.getMonth()];
+                const day = item.date.getDate();
+                const weekday = weekdays[item.date.getDay()];
+                
+                html += `
+                    <div class="timeline-item">
+                        <div class="timeline-date">
+                            <div class="timeline-day">${day}</div>
+                            <div class="timeline-month">${monthName}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">${weekday}</div>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">Aula ${item.classNumber}: ${item.content}</div>
+                            <div class="timeline-desc">
+                                ${item.event ? `📅 ${item.event.title}` : 'Aula regular'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `</div></div>`;
+            container.innerHTML = html;
+            
+            window.generatedPlanData = plan;
+        }
+
+        function downloadPlanPDF() {
+            const plan = window.generatedPlanData;
+            if (!plan) return;
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFontSize(16);
+            doc.text('Plano de Aulas - EduPlan AI', 105, 20, { align: 'center' });
+            
+            doc.setFontSize(10);
+            doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 20, 30);
+            
+            const tableData = plan.map(p => [
+                `Aula ${p.classNumber}`,
+                p.date.toLocaleDateString('pt-BR'),
+                p.content
+            ]);
+            
+            doc.autoTable({
+                startY: 40,
+                head: [['Aula', 'Data', 'Conteúdo']],
+                body: tableData,
+                theme: 'grid',
+                headStyles: { fillColor: [99, 102, 241] },
+                styles: { fontSize: 10 }
+            });
+            
+            doc.save('plano_de_aulas.pdf');
+            showToast('PDF baixado!');
+        }
+
+        // Utilities
+        function clearAllEvents() {
+            if (confirm('Limpar todos os eventos?')) {
+                events = [];
+                saveEvents();
+                renderCalendar();
+                showToast('Calendário limpo');
+            }
+        }
+
+        function saveEvents() {
+            localStorage.setItem('schoolEvents', JSON.stringify(events));
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast show' + (type === 'error' ? ' error' : '');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Close modals on outside click
+        window.onclick = function(e) {
+            if (e.target.classList.contains('modal')) {
+                e.target.classList.remove('active');
+            }
+        }
+    </script>
 </body>
 </html>
