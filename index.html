@@ -1,1 +1,321 @@
-Not found
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduPlan AI - Full System</title>
+    <style>
+        :root {
+            --bg: #0a0f1c; --surface: #151b2d; --text: #f1f5f9; --primary: #6366f1;
+            --secondary: #2dd4bf; --border: #ffffff10;
+            --cor-normal: #1e2642; --cor-fds: #84cc16; --cor-feriado: #dc2626;
+            --cor-facultativo: #ea580c; --cor-prova: #8b5cf6; --cor-evento: #ec4899; --cor-especial: #06b6d4;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 20px; overflow-x: hidden; }
+        
+        /* Navegação por Abas */
+        .main-nav { background: var(--surface); padding: 10px; border-radius: 12px; margin-bottom: 20px; display: flex; gap: 10px; border: 1px solid var(--border); position: sticky; top: 0; z-index: 1000; }
+        .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; background: transparent; color: #64748b; cursor: pointer; font-weight: bold; transition: 0.3s; font-size: 14px; }
+        .tab-btn.active { background: var(--primary); color: white; }
+        
+        .view { display: none; animation: fadeIn 0.3s ease; }
+        .view.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Estilos Calendário */
+        .legend { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; background: var(--surface); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ffffff05; }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #94a3b8; }
+        .box { width: 12px; height: 12px; border-radius: 3px; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
+        .month-card { background: var(--surface); padding: 15px; border-radius: 12px; border: 1px solid #ffffff05; }
+        .month-name { text-align: center; color: var(--secondary); font-weight: bold; margin-bottom: 10px; text-transform: uppercase; font-size: 14px; }
+        .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+        .day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: bold; transition: 0.2s; position: relative; }
+        .day:hover { filter: brightness(1.3); transform: scale(1.1); z-index: 10; }
+        .day.empty { background: transparent; cursor: default; }
+        .type-normal { background: var(--cor-normal); }
+        .type-weekend { background: var(--cor-fds); color: #000; }
+        .type-holiday { background: var(--cor-feriado); color: #fff; }
+        .type-optional { background: var(--cor-facultativo); color: #fff; }
+        .type-exam { background: var(--cor-prova); color: #fff; }
+        .type-event { background: var(--cor-evento); color: #fff; }
+        .type-special { background: var(--cor-especial); color: #000; }
+
+        /* Estilos Planejamento */
+        .planner-container { display: grid; grid-template-columns: 350px 1fr; gap: 20px; align-items: start; }
+        .form-card { background: var(--surface); padding: 20px; border-radius: 12px; border: 1px solid var(--border); position: sticky; top: 80px; }
+        .preview-card { background: white; color: #1e293b; padding: 40px; border-radius: 4px; min-height: 29.7cm; width: 21cm; margin: 0 auto; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        
+        input, textarea, select { width: 100%; padding: 10px; background: #0a0f1c; color: #fff; border: 1px solid #333; border-radius: 6px; margin-bottom: 12px; font-size: 14px; }
+        .btn { padding: 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; display: inline-block; text-align: center; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-secondary { background: var(--secondary); color: #0f172a; width: 100%; }
+        
+        /* Modal */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000; justify-content: center; align-items: center; padding: 20px; }
+        .modal.active { display: flex; }
+        .modal-content { background: var(--surface); padding: 25px; border-radius: 12px; width: 100%; max-width: 400px; border: 1px solid var(--primary); }
+
+        /* Impressão */
+        .header-box { border: 2px solid #1e293b; padding: 20px; margin-bottom: 30px; text-align: center; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 13px; border-top: 1px solid #e2e8f0; margin-top: 15px; padding-top: 15px; text-align: left; }
+        .date-line { font-size: 14px; font-weight: bold; border-left: 4px solid var(--primary); padding: 6px 12px; background: #f1f5f9; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .lesson-item { margin-left: 20px; margin-bottom: 10px; border-left: 2px solid #e2e8f0; padding-left: 15px; }
+        .lesson-name { font-weight: 700; font-size: 13px; color: #0f172a; display: block; }
+        .lesson-detail { font-size: 12px; color: #475569; }
+
+        @media print {
+            body { padding: 0; background: white; }
+            .main-nav, .form-card, .legend, .calendar-grid, .modal, .btn-print-hide { display: none !important; }
+            .view { display: none !important; }
+            .view#view-planner { display: block !important; }
+            .preview-card { box-shadow: none; width: 100%; padding: 0; margin: 0; }
+        }
+        @media (max-width: 1100px) {
+            .planner-container { grid-template-columns: 1fr; }
+            .preview-card { width: 100%; overflow-x: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="main-nav">
+        <button class="tab-btn active" onclick="switchTab('calendar')">📅 Calendário Escolar</button>
+        <button class="tab-btn" onclick="switchTab('planner')">⚡ Gerador de Planejamento AI</button>
+    </nav>
+
+    <!-- VISTA CALENDÁRIO -->
+    <div id="view-calendar" class="view active">
+        <div class="legend">
+            <div class="legend-item"><div class="box" style="background:var(--cor-normal)"></div> Normal</div>
+            <div class="legend-item"><div class="box" style="background:var(--cor-fds)"></div> FDS</div>
+            <div class="legend-item"><div class="box" style="background:var(--cor-feriado)"></div> Feriado</div>
+            <div class="legend-item"><div class="box" style="background:var(--cor-facultativo)"></div> Facultativo</div>
+            <div class="legend-item"><div class="box" style="background:var(--cor-prova)"></div> Prova</div>
+            <div class="legend-item"><div class="box" style="background:var(--cor-evento)"></div> Evento</div>
+            <div class="legend-item"><div class="box" style="background:var(--cor-especial)"></div> Especial</div>
+        </div>
+
+        <div style="margin-bottom: 20px; display: flex; gap: 10px;">
+            <button class="btn btn-primary" onclick="openImport()">📥 Importar Lote</button>
+            <button class="btn" style="background:#ef4444; color:white" onclick="clearAll()">🗑️ Limpar Tudo</button>
+        </div>
+
+        <div id="calendar-render" class="calendar-grid"></div>
+    </div>
+
+    <!-- VISTA PLANEJAMENTO -->
+    <div id="view-planner" class="view">
+        <div class="planner-container">
+            <div class="form-card">
+                <h3 style="color:var(--secondary); font-size:12px; margin-bottom:10px">DADOS DO PLANO</h3>
+                <input type="text" id="prof" placeholder="Nome do Professor">
+                <input type="text" id="disc" placeholder="Disciplina">
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
+                    <input type="date" id="ini" value="2026-02-02">
+                    <input type="date" id="fim" value="2026-12-15">
+                </div>
+
+                <select id="dow">
+                    <option value="1">Segunda-feira</option>
+                    <option value="2" selected>Terça-feira</option>
+                    <option value="3">Quarta-feira</option>
+                    <option value="4">Quinta-feira</option>
+                    <option value="5">Sexta-feira</option>
+                </select>
+                
+                <select id="qtd">
+                    <option value="1">1 Aula por dia</option>
+                    <option value="2" selected>2 Aulas por dia</option>
+                    <option value="3">3 Aulas por dia</option>
+                </select>
+
+                <textarea id="txt" rows="6" placeholder="Cole os tópicos do conteúdo aqui..."></textarea>
+                
+                <button id="btnMain" class="btn btn-secondary" onclick="CRIAR_PLANO()">⚡ GERAR COM IA</button>
+                <button class="btn btn-primary btn-print-hide" style="width:100%; margin-top:10px; background:#475569" onclick="window.print()">🖨️ IMPRIMIR PDF</button>
+            </div>
+
+            <div class="preview-card" id="output">
+                <div style="text-align:center; margin-top:150px; color:#94a3b8">
+                    <p style="font-size: 50px;">📄</p>
+                    <p>O plano gerado aparecerá aqui.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAIS -->
+    <div id="modal-import" class="modal"><div class="modal-content">
+        <h3>Importação</h3>
+        <textarea id="import-area" style="height:150px" placeholder="01/05 - Feriado..."></textarea>
+        <button class="btn btn-secondary" onclick="processBatch()">Processar</button>
+        <button class="btn" style="width:100%; margin-top:5px" onclick="closeModals()">Fechar</button>
+    </div></div>
+
+    <div id="modal-day" class="modal"><div class="modal-content">
+        <h3 id="m-data">Data</h3>
+        <select id="m-tipo">
+            <option value="normal">Dia Normal</option>
+            <option value="holiday">Feriado Nacional</option>
+            <option value="optional">Ponto Facultativo</option>
+            <option value="exam">Prova/Avaliação</option>
+            <option value="event">Evento Escolar</option>
+            <option value="special">Atividade Especial</option>
+        </select>
+        <input type="text" id="m-desc" placeholder="Descrição">
+        <button class="btn btn-secondary" onclick="saveDay()">Salvar</button>
+        <button class="btn" style="width:100%; margin-top:5px" onclick="closeModals()">Cancelar</button>
+    </div></div>
+
+    <script>
+        const apiKey = "";
+        let db = JSON.parse(localStorage.getItem('eduplan_v5')) || {};
+        let activeD = "";
+
+        // Troca de Abas
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            
+            if(tab === 'calendar') {
+                document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+                document.getElementById('view-calendar').classList.add('active');
+                renderCalendar();
+            } else {
+                document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+                document.getElementById('view-planner').classList.add('active');
+            }
+        }
+
+        // Lógica Calendário
+        function renderCalendar() {
+            const cont = document.getElementById('calendar-render');
+            cont.innerHTML = '';
+            const meses = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+            meses.forEach((m, idx) => {
+                const card = document.createElement('div');
+                card.className = 'month-card';
+                card.innerHTML = `<div class="month-name">${m}</div>`;
+                const grid = document.createElement('div');
+                grid.className = 'days-grid';
+                const start = new Date(2026, idx, 1).getDay();
+                const total = new Date(2026, idx+1, 0).getDate();
+                for(let i=0; i<start; i++) grid.innerHTML += '<div class="day empty"></div>';
+                for(let d=1; d<=total; d++) {
+                    const iso = `2026-${String(idx+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                    const isFds = new Date(2026, idx, d).getDay() % 6 === 0;
+                    const info = db[iso];
+                    let cls = info ? `type-${info.type}` : (isFds ? 'type-weekend' : 'type-normal');
+                    const div = document.createElement('div');
+                    div.className = `day ${cls}`;
+                    div.innerText = d;
+                    div.onclick = () => { activeD = iso; openDay(iso, info); };
+                    grid.appendChild(div);
+                }
+                card.appendChild(grid); cont.appendChild(card);
+            });
+        }
+
+        function openDay(iso, info) {
+            document.getElementById('m-data').innerText = iso.split('-').reverse().join('/');
+            document.getElementById('m-tipo').value = info?.type || 'normal';
+            document.getElementById('m-desc').value = info?.desc || '';
+            document.getElementById('modal-day').classList.add('active');
+        }
+
+        function saveDay() {
+            const t = document.getElementById('m-tipo').value;
+            const d = document.getElementById('m-desc').value;
+            if(t === 'normal' && !d) delete db[activeD]; else db[activeD] = {type: t, desc: d};
+            localStorage.setItem('eduplan_v5', JSON.stringify(db));
+            closeModals(); renderCalendar();
+        }
+
+        function processBatch() {
+            const txt = document.getElementById('import-area').value;
+            txt.split('\n').forEach(line => {
+                const match = line.match(/(\d{2})\/(\d{2})/);
+                if(match) {
+                    const iso = `2026-${match[2]}-${match[1]}`;
+                    db[iso] = { type: 'holiday', desc: line.replace(/.*?\d{2}\/\d{2}/, "").trim() };
+                }
+            });
+            localStorage.setItem('eduplan_v5', JSON.stringify(db));
+            closeModals(); renderCalendar();
+        }
+
+        function clearAll() { if(confirm("Apagar tudo?")) { db={}; localStorage.removeItem('eduplan_v5'); renderCalendar(); } }
+        function openImport() { document.getElementById('modal-import').classList.add('active'); }
+        function closeModals() { document.querySelectorAll('.modal').forEach(m => m.classList.remove('active')); }
+
+        // Lógica IA Planejamento
+        async function callGemini(prompt) {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+            const data = await res.json();
+            return data.candidates[0].content.parts[0].text;
+        }
+
+        async function CRIAR_PLANO() {
+            const btn = document.getElementById('btnMain');
+            const conteudo = document.getElementById('txt').value;
+            if(!conteudo) return alert("Insira o conteúdo");
+
+            btn.disabled = true; btn.innerText = "⏳ GERANDO...";
+            
+            const ini = new Date(document.getElementById('ini').value + 'T00:00:00');
+            const fim = new Date(document.getElementById('fim').value + 'T00:00:00');
+            const dow = parseInt(document.getElementById('dow').value);
+            const qtd = parseInt(document.getElementById('qtd').value);
+
+            let cronograma = [];
+            let aulasUteis = 0;
+            let curr = new Date(ini);
+
+            while(curr <= fim) {
+                if(curr.getDay() === dow) {
+                    const iso = curr.toISOString().split('T')[0];
+                    const info = db[iso];
+                    const bloqueado = info && (info.type === 'holiday' || info.type === 'optional');
+                    cronograma.push({ data: new Date(curr), info: info, bloqueado });
+                    if(!bloqueado) aulasUteis += qtd;
+                }
+                curr.setDate(curr.getDate()+1);
+            }
+
+            try {
+                const prompt = `Distribua estes tópicos em ${aulasUteis} aulas. Tópicos: ${conteudo}. Retorne APENAS um array JSON: [{"t":"Assunto", "d":"Atividade"}].`;
+                const raw = await callGemini(prompt);
+                const acoes = JSON.parse(raw.replace(/```json|```/g, "").trim());
+
+                let html = `<div class="header-box"><h2>PLANO DE CURSO 2026</h2><div class="info-grid">
+                    <div><strong>PROFESSOR:</strong> ${document.getElementById('prof').value}</div>
+                    <div><strong>DISCIPLINA:</strong> ${document.getElementById('disc').value}</div>
+                    <div><strong>AULAS:</strong> ${aulasUteis}</div><div><strong>PERÍODO:</strong> ${ini.toLocaleDateString()} a ${fim.toLocaleDateString()}</div>
+                </div></div>`;
+
+                let idx = 0;
+                cronograma.forEach(dia => {
+                    html += `<div class="date-line"><span>📅 ${dia.data.toLocaleDateString()}</span> ${dia.bloqueado ? `<span style="color:red">🚫 ${dia.info.desc}</span>` : ''}</div>`;
+                    if(!dia.bloqueado) {
+                        for(let i=0; i<qtd; i++) {
+                            const a = acoes[idx++] || {t: "Revisão", d: "Fixação"};
+                            html += `<div class="lesson-item"><span class="lesson-name">Aula ${idx}: ${a.t}</span><span class="lesson-detail">${a.d}</span></div>`;
+                        }
+                    }
+                });
+                document.getElementById('output').innerHTML = html;
+            } catch(e) { alert("Erro na geração. Tente novamente."); }
+            finally { btn.disabled = false; btn.innerText = "⚡ GERAR COM IA"; }
+        }
+
+        window.onload = renderCalendar;
+    </script>
+</body>
+</html>
